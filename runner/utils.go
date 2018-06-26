@@ -1,13 +1,18 @@
 package runner
 
 import (
-	"github.com/fsnotify/fsnotify"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/yuanziluoye/wu/config"
+	"github.com/yuanziluoye/wu/logger"
 )
+
+var appConfig = config.GetAppConfig()
+var appLoggerSecond = logger.GetLogger()
 
 func watch(path string, abort <-chan struct{}) (<-chan string, error) {
 	watcher, err := fsnotify.NewWatcher()
@@ -18,7 +23,7 @@ func watch(path string, abort <-chan struct{}) (<-chan string, error) {
 	for p := range list(path) {
 		err = watcher.Add(p)
 		if err != nil {
-			log.Printf("Failed to watch: %s, error: %s", p, err)
+			appLoggerSecond.Error("Failed to watch: %s, error: %s", p, err)
 		}
 	}
 
@@ -32,10 +37,15 @@ func watch(path string, abort <-chan struct{}) (<-chan string, error) {
 				// Abort watching
 				err := watcher.Close()
 				if err != nil {
-					log.Fatalln("Failed to stop watch")
+					appLoggerSecond.Error("Failed to stop watch")
 				}
 				return
 			case fp := <-watcher.Events:
+
+				if !itemInSlice(fp.Op.String(), appConfig.Events) {
+					break
+				}
+
 				if fp.Op == fsnotify.Create {
 					info, err := os.Stat(fp.Name)
 					if err == nil && info.IsDir() {
@@ -45,7 +55,7 @@ func watch(path string, abort <-chan struct{}) (<-chan string, error) {
 				}
 				out <- fp.Name
 			case err := <-watcher.Errors:
-				log.Println("Watch Error:", err)
+				appLoggerSecond.Error("Watch Error: %v", err)
 			}
 		}
 	}()
@@ -79,7 +89,7 @@ func list(root string) <-chan string {
 
 	info, err := os.Stat(root)
 	if err != nil {
-		log.Fatalf("Failed to visit %s, error: %s\n", root, err)
+		appLoggerSecond.Error("Failed to visit %s, error: %s\n", root, err)
 	}
 	if !info.IsDir() {
 		go func() {
@@ -95,7 +105,7 @@ func list(root string) <-chan string {
 		filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
 				if err != nil {
-					log.Printf("Failed to visit directory: %s, error: %s", path, err)
+					appLoggerSecond.Error("Failed to visit directory: %s, error: %s", path, err)
 					return err
 				}
 				out <- path
@@ -131,4 +141,13 @@ loop:
 
 	sort.Strings(ret)
 	return ret
+}
+
+func itemInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }

@@ -3,13 +3,14 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/yuanziluoye/wu/logger"
 )
 
 type Command interface {
@@ -25,6 +26,8 @@ type command struct {
 	mutex  *sync.Mutex
 	exited chan struct{}
 }
+
+var appLogger = logger.GetLogger()
 
 func New(cmdstring []string) Command {
 	if len(cmdstring) == 0 {
@@ -54,7 +57,7 @@ func (c *command) Start(delay time.Duration) {
 	defer c.mutex.Unlock()
 
 	if c.cmd != nil && !c.cmd.ProcessState.Exited() {
-		log.Fatalln("Failed to start command: previous command hasn't exit.")
+		appLogger.Error("Failed to start command: previous command hasn't exit.")
 	}
 
 	cmd := exec.Command(c.name, c.args...)
@@ -66,13 +69,13 @@ func (c *command) Start(delay time.Duration) {
 	// Make process group id available for the command to run
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	log.Println("- Running command:", c.String())
+	appLogger.Info("- Running command: %s", c.String())
 
 	err := cmd.Start()
 	exited := make(chan struct{})
 
 	if err != nil {
-		log.Println("Failed:", err)
+		appLogger.Error("Failed: %v", err)
 	} else {
 		c.cmd = cmd
 		c.exited = exited
@@ -85,9 +88,9 @@ func (c *command) Start(delay time.Duration) {
 
 			cmd.Wait()
 			if cmd.ProcessState.Success() {
-				log.Println("- Done.")
+				appLogger.Info("- Done.")
 			} else {
-				log.Println("- Terminated.")
+				appLogger.Warn("- Terminated.")
 			}
 		}()
 	}
@@ -111,10 +114,10 @@ func (c *command) Terminate(wait time.Duration) {
 		return
 	}
 
-	log.Println("- Stopping")
+	appLogger.Info("- Stopping")
 	// Try to stop the process by sending a SIGINT signal
 	if err := c.kill(syscall.SIGINT); err != nil {
-		log.Println("Failed to terminate process with interrupt:", err)
+		appLogger.Error("Failed to terminate process with interrupt: %v", err)
 	}
 
 	for {
@@ -122,7 +125,7 @@ func (c *command) Terminate(wait time.Duration) {
 		case <-c.exited:
 			return
 		case <-time.After(wait):
-			log.Println("- Killing process")
+			appLogger.Warn("- Killing process")
 			c.kill(syscall.SIGTERM)
 		}
 	}

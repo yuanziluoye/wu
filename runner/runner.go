@@ -2,10 +2,11 @@
 package runner
 
 import (
-	"github.com/shanzi/wu/command"
-	"log"
 	"strings"
 	"time"
+
+	"github.com/yuanziluoye/wu/command"
+	"github.com/yuanziluoye/wu/logger"
 )
 
 type Runner interface {
@@ -23,6 +24,8 @@ type runner struct {
 
 	abort chan struct{}
 }
+
+var appLogger = logger.GetLogger()
 
 func New(path string, patterns []string, command command.Command) Runner {
 	return &runner{
@@ -48,10 +51,10 @@ func (r *runner) Start() {
 	r.abort = make(chan struct{})
 	changed, err := watch(r.path, r.abort)
 	if err != nil {
-		log.Fatal("Failed to initialize watcher:", err)
+		appLogger.Error("Failed to initialize watcher: %v", err)
 	}
 	matched := match(changed, r.patterns)
-	log.Println("Start watching...")
+	appLogger.Info("Start watching...")
 
 	// Run the command once at initially
 	r.command.Start(200 * time.Millisecond)
@@ -61,7 +64,7 @@ func (r *runner) Start() {
 		// Terminate previous running command
 		r.command.Terminate(2 * time.Second)
 
-		log.Println("File changed:", strings.Join(files, ", "))
+		appLogger.Info("File changed: %s", strings.Join(files, ", "))
 
 		// Run new command
 		r.command.Start(200 * time.Millisecond)
@@ -69,8 +72,7 @@ func (r *runner) Start() {
 }
 
 func (r *runner) Exit() {
-	log.Println()
-	log.Println("Shutting down...")
+	appLogger.Info("Shutting down...")
 
 	r.abort <- struct{}{}
 	close(r.abort)

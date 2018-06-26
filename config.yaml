@@ -1,0 +1,18 @@
+# worker:
+# Directory string
+# Patterns array
+# Command array
+
+worker:
+    -
+        Directory: .
+        Patterns: ['*.go', '*.js']
+        Command: ['go','build']
+    -
+        Directory: .
+        Patterns: ['*.c']
+        Command: ['/bin/sh', '-c', echo "START" && sleep 5 && echo "END"]
+
+events: ['CREATE', 'REMOVE', 'WRITE', 'RENAME']
+
+logPath: ./log/app.log
