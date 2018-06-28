@@ -17,8 +17,6 @@ go get github.com/yuanziluoye/wu
 go install github.com/yuanziluoye/wu
 ```
 
-Precompiled version can be found [here](https://github.com/shanzi/wu/releases).
-
 # Edit config.yaml
 ```
 worker:
@@ -38,7 +36,7 @@ logPath: ./log/app.log
 
 # Usage
 ```
-./wu 
+chmod u+x wu && ./wu 
 ```
 
 # LICENSE
