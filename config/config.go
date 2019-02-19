@@ -1,14 +1,14 @@
 package config
 
 import (
-	"path/filepath"
+	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/astaxie/beego/logs"
 	"gopkg.in/yaml.v2"
-	"flag"
-	"fmt"
 )
 
 type AppWorker struct {

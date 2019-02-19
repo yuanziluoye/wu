@@ -5,13 +5,13 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"time"
 	"syscall"
+	"time"
 
 	"github.com/yuanziluoye/wu/command"
-	"github.com/yuanziluoye/wu/runner"
 	"github.com/yuanziluoye/wu/config"
 	"github.com/yuanziluoye/wu/logger"
+	"github.com/yuanziluoye/wu/runner"
 )
 
 var appConfig = config.GetAppConfig()
