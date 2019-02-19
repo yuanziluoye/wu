@@ -15,4 +15,11 @@ worker:
 
 events: ['CREATE', 'REMOVE', 'WRITE', 'RENAME']
 
-logPath: ./log/app.log
+logger:
+    Daily: true
+    MaxDays: 120
+    Rotate: true
+    RotatePerm: '0440'
+    Level: 7
+    Perm: '0660'
+    LogPath: './log/app.log'

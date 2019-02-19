@@ -17,10 +17,20 @@ type AppWorker struct {
 	Command   []string `yaml:"Command"`
 }
 
+type AppLogger struct {
+	Daily      bool   `yaml:"Daily"`
+	MaxDays    int64  `yaml:"MaxDays"`
+	Rotate     bool   `yaml:"Rotate"`
+	Level      int    `yaml:"Level"`
+	Perm       string `yaml:"Perm"`
+	RotatePerm string `yaml:"RotatePerm"`
+	LogPath    string `yaml:"LogPath"`
+}
+
 type AppConfig struct {
 	Worker  []AppWorker
 	Events  []string `yaml:"events"`
-	LogPath string   `yaml:"logPath"`
+	Logger      AppLogger
 }
 
 var logger = logs.NewLogger(10000)
@@ -52,7 +62,7 @@ func loadConfig() {
 		os.Exit(0)
 	}
 
-	logPath := appConfig.LogPath
+	logPath := appConfig.Logger.LogPath
 	logPath, _ = filepath.Abs(logPath)
 	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
 		logger.Error("[config] create log dir failed, %v", err)
